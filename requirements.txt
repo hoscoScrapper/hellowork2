@@ -1,0 +1,13 @@
+selenium==4.28.0  # Adjust version based on your setup
+undetected-chromedriver==3.5.5  # For undetected Selenium
+pandas==2.2.3  # For data handling
+gspread==6.1.4  # For interacting with Google Sheets
+oauth2client==4.1.3  # For Google API authentication
+webdriver-manager==4.0.2  # To dynamically manage ChromeDriver
+requests
+asyncio
+httpx
+nest_asyncio
+openai
+instructor
+pydantic
