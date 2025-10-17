@@ -10,7 +10,7 @@ from time import sleep
 import random
 import os
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
+#from webdriver_manager.chrome import ChromeDriverManager
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 import unicodedata
@@ -38,10 +38,10 @@ url_base = f"https://www.hellowork.com/fr-fr/emploi/recherche.html?k=Restauratio
 
 # Configurer Selenium avec undetected_chromedriver
 options = uc.ChromeOptions()
-options.add_argument('--headless')  # Optionnel : exécuter sans ouvrir le navigateur
+options.add_argument('--headless=new')  # Optionnel : exécuter sans ouvrir le navigateur
 options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
-options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36')
+options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.7390.61 Safari/537.36')
 
 # Initialiser le driver avec undetected_chromedriver
 driver = uc.Chrome(options=options)
@@ -98,7 +98,7 @@ options.add_argument('--headless')
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-gpu")
 options.add_argument("--disable-dev-shm-usage")
-options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36')
+options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.7390.61 Safari/537.36')
 
 
 # Launch the driver
