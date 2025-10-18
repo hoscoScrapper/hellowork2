@@ -634,4 +634,19 @@ print(f"Post concat Check combined_data length {len(combined_data)}")
 
 # Update Google Sheets with the combined data
 worksheet.clear()  # Clear existing content
-worksheet.update([combined_data.columns.tolist()] + combined_data.values.tolist())
+#worksheet.update([combined_data.columns.tolist()] + combined_data.values.tolist())
+
+
+BATCH_SIZE = 500
+
+data = [combined_data.columns.tolist()] + combined_data.values.tolist()
+
+for start in range(0, len(data), BATCH_SIZE):
+    end = start + BATCH_SIZE
+    try:
+        worksheet.update(data[start:end])
+        print(f"✅ Uploaded rows {start} to {end}")
+        time.sleep(2)
+    except Exception as e:
+        print(f"❌ Error uploading rows {start}-{end}: {e}")
+        time.sleep(30)  # backoff before retry
