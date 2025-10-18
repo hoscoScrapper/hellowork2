@@ -30,6 +30,7 @@ import instructor
 from enum import Enum
 from pydantic import BaseModel, Field, field_validator, constr, ValidationError, model_validator
 from typing import List, Optional, Any
+import math
 
 
 # Définir les paramètres de recherche
@@ -88,7 +89,7 @@ def extraire_offres(limit=10):
     return offres_totales
 
 
-resultats_part1 = extraire_offres(limit=400)
+resultats_part1 = extraire_offres(limit=20)
 resultats_part1 = pd.DataFrame(resultats_part1)
 job_urls = resultats_part1.url.tolist()
 
@@ -638,15 +639,39 @@ worksheet.clear()  # Clear existing content
 
 
 BATCH_SIZE = 500
+MAX_RETRIES = 3
 
-data = [combined_data.columns.tolist()] + combined_data.values.tolist()
+# Prepare data
+header = combined_data.columns.tolist()
+rows = combined_data.values.tolist()
 
-for start in range(0, len(data), BATCH_SIZE):
-    end = start + BATCH_SIZE
-    try:
-        worksheet.update(data[start:end])
-        print(f"✅ Uploaded rows {start} to {end}")
-        time.sleep(2)
-    except Exception as e:
-        print(f"❌ Error uploading rows {start}-{end}: {e}")
-        time.sleep(30)  # backoff before retry
+# 1️⃣ Upload the header row
+worksheet.update("A1", [header], value_input_option="USER_ENTERED")
+print("✅ Header uploaded to row 1")
+
+# 2️⃣ Upload data in batches starting from row 2
+total_rows = len(rows)
+num_batches = math.ceil(total_rows / BATCH_SIZE)
+
+for batch_idx, start in enumerate(range(0, total_rows, BATCH_SIZE), start=1):
+    end = min(start + BATCH_SIZE, total_rows)
+    batch = rows[start:end]
+
+    # Google Sheets rows start at 1; data starts at row 2
+    start_row = start + 2  # +1 for 0-index, +1 for header
+    range_a1 = f"A{start_row}"
+
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            worksheet.update(range_a1, batch, value_input_option="USER_ENTERED")
+            print(f"✅ Uploaded batch {batch_idx}/{num_batches} rows {start_row}–{start_row + len(batch) - 1}")
+            time.sleep(1)
+            break
+        except Exception as e:
+            print(f"❌ Error uploading batch {batch_idx} (rows {start_row}–{start_row + len(batch) - 1}) attempt {attempt}: {e}")
+            if attempt < MAX_RETRIES:
+                sleep_for = 5 * attempt
+                print(f"    ↪ Retrying in {sleep_for}s...")
+                time.sleep(sleep_for)
+            else:
+                print(f"⚠️ Skipping batch {batch_idx} after {MAX_RETRIES} failed attempts.")
