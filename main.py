@@ -604,7 +604,7 @@ def embed_in_batches(texts, batch_size=1500):
         batch = texts[i:i + batch_size]
         try:
             response = client_ai.embeddings.create(
-                model="text-embedding-3-large",
+                model="text-embedding-3-small",
                 input=batch
             )
             batch_embeddings = [item.embedding for item in response.data]
@@ -616,7 +616,7 @@ def embed_in_batches(texts, batch_size=1500):
     return embeddings
 
 # --- Generate embeddings ---
-new_data["OpenAIEmbeddedLarge"] = embed_in_batches(new_data["combined_text"].tolist(), batch_size=1500)
+new_data["OpenAIEmbeddedSmall"] = embed_in_batches(new_data["combined_text"].tolist(), batch_size=1500)
 
 # --- Optional: Clean up ---
 new_data.drop(columns=["combined_text"], inplace=True)
