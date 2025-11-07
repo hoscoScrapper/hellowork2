@@ -592,7 +592,7 @@ def build_sentence(row):
     )
 
 # --- Create the combined natural-language field ---
-existing_data["combined_text"] = existing_data.apply(build_sentence, axis=1)
+new_data["combined_text"] = new_data.apply(build_sentence, axis=1)
 
 # --- Define batching function ---
 def embed_in_batches(texts, batch_size=1500):
@@ -616,10 +616,10 @@ def embed_in_batches(texts, batch_size=1500):
     return embeddings
 
 # --- Generate embeddings ---
-existing_data["OpenAIEmbeddedLarge"] = embed_in_batches(existing_data["combined_text"].tolist(), batch_size=1500)
+new_data["OpenAIEmbeddedLarge"] = embed_in_batches(new_data["combined_text"].tolist(), batch_size=1500)
 
 # --- Optional: Clean up ---
-existing_data.drop(columns=["combined_text"], inplace=True)
+new_data.drop(columns=["combined_text"], inplace=True)
 
 # -------- FIN EMBEDING OPENAI LARGE ----------------------------------------------------------------------------------------------
 
