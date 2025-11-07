@@ -603,7 +603,7 @@ def embed_in_batches(texts, batch_size=1500):
     for i in tqdm(range(0, len(texts), batch_size), desc="Embedding batches"):
         batch = texts[i:i + batch_size]
         try:
-            response = client.embeddings.create(
+            response = client_ai.embeddings.create(
                 model="text-embedding-3-large",
                 input=batch
             )
