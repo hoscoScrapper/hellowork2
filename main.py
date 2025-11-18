@@ -70,7 +70,8 @@ def extraire_offres(limit=10):
                     break
 
                 try:
-                    url_offre = offre.find_element(By.TAG_NAME, 'a').get_attribute("href")
+                    #url_offre = offre.find_element(By.TAG_NAME, 'a').get_attribute("href")
+                    url_offre = offre.find_element(By.CSS_SELECTOR, 'a[data-cy="offerTitle"]').get_attribute("href")
                 except Exception:
                     url_offre = "N/A"
 
