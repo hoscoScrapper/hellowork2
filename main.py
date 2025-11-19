@@ -57,32 +57,43 @@ def extraire_offres(limit=10):
             url = f"{url_base}&p={start}"
             print(f"Scraping page {start} from URL: {url}")
             driver.get(url)
-            sleep(random.uniform(3, 5))  # Pause pour laisser la page se charger
+            sleep(random.uniform(2, 4))  # pause légère avant cookie popup
 
-            offres = driver.find_elements(By.CSS_SELECTOR, 'li[data-id-storage-target="item"]')
+            # 👉 Try clicking "Tout accepter" cookie button
+            try:
+                wait = WebDriverWait(driver, 5)
+                accepter_btn = wait.until(
+                    EC.element_to_be_clickable((By.ID, "hw-cc-notice-accept-btn"))
+                )
+                accepter_btn.click()
+                print("Cookies popup accepted.")
+                sleep(1)
+            except Exception:
+                print("No cookie popup.")
+                pass
 
-            if len(offres) == 0:  # Si aucune offre n'est trouvée, on arrête
-                print("Aucune offre trouvée sur cette page.")
-                break
+            sleep(random.uniform(3, 5))  # laisser charger la page après popup
+
+            wait = WebDriverWait(driver, 10)
+
+            # Wait for offers to load
+            offres = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div[data-id-storage-item-id]")))
+            
+            print("Nombre d'offres trouvées:", len(offres))
 
             for offre in offres:
-                if len(offres_totales) >= limit:
-                    break
-
                 try:
-                    #url_offre = offre.find_element(By.TAG_NAME, 'a').get_attribute("href")
-                    url_offre = offre.find_element(By.CSS_SELECTOR, 'a[data-cy="offerTitle"]').get_attribute("href")
-                except Exception:
+                    link = offre.find_element(By.XPATH, ".//a[contains(@href, '/fr-fr/emplois/')]")
+                    url_offre = link.get_attribute("href")
+                except:
                     url_offre = "N/A"
 
-                offres_totales.append({
-                    'url': url_offre,
-                })
+                offres_totales.append({'url': url_offre})
 
-            # Passer à la page suivante seulement si le nombre d'offres sur cette page est supérieur à zéro
+
             if len(offres_totales) < limit:
                 start += 1
-                sleep(random.uniform(1, 2))  # Pause entre les pages
+                sleep(random.uniform(1, 2))
 
     finally:
         driver.quit()
@@ -90,7 +101,7 @@ def extraire_offres(limit=10):
     return offres_totales
 
 
-resultats_part1 = extraire_offres(limit=400)
+resultats_part1 = extraire_offres(limit=5)
 resultats_part1 = pd.DataFrame(resultats_part1)
 job_urls = resultats_part1.url.tolist()
 
