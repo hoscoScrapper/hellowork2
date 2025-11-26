@@ -101,7 +101,7 @@ def extraire_offres(limit=10):
     return offres_totales
 
 
-resultats_part1 = extraire_offres(limit=5)
+resultats_part1 = extraire_offres(limit=500)
 resultats_part1 = pd.DataFrame(resultats_part1)
 job_urls = resultats_part1.url.tolist()
 
