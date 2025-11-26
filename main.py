@@ -101,9 +101,46 @@ def extraire_offres(limit=10):
     return offres_totales
 
 
-resultats_part1 = extraire_offres(limit=400)
+resultats_part1 = extraire_offres(limit=5)
 resultats_part1 = pd.DataFrame(resultats_part1)
 job_urls = resultats_part1.url.tolist()
+
+
+#------------------------CHECK DUPLICATES URL DANS BIGQUERY--------------------------------------------------
+
+from google.cloud import bigquery
+import pandas as pd
+from google.oauth2 import service_account
+
+
+key_path = json.loads(os.environ.get("BIGQUERY"))
+
+# Load JSON key
+credentials = service_account.Credentials.from_service_account_file(key_path)
+
+# Initialize BigQuery client
+client = bigquery.Client(credentials=credentials, project="databasealfred")
+
+# Query existing URLs from your BigQuery table
+query = """
+    SELECT url
+    FROM `databasealfred.jobListings.hellowork`
+    WHERE url IS NOT NULL
+"""
+query_job = client.query(query)
+
+# Convert results to a set for fast lookup
+existing_urls = {row.url for row in query_job}
+
+print(f"Loaded {len(existing_urls)} URLs from BigQuery")
+
+# Filter job_urls
+job_urls = [url for url in job_urls if url not in existing_urls]
+
+print(f"✅ Remaining job URLs to scrape: {len(job_urls)}")
+
+#------------------------ FIN CHECK DUPLICATES URL DANS BIGQUERY--------------------------------------------------
+
 
 # Setup undetected Chrome driver
 options = uc.ChromeOptions()
@@ -199,21 +236,6 @@ resultats_part2 = pd.DataFrame(job_data)
 #Concat axis 0 resultats_part1 and resultats_part2
 df_jobs = pd.concat([resultats_part1, resultats_part2], axis=1)
 
-# Google Sheets API setup
-scope = ["https://spreadsheets.google.com/feeds", 'https://www.googleapis.com/auth/spreadsheets',
-         "https://www.googleapis.com/auth/drive.file", "https://www.googleapis.com/auth/drive"]
-
-credentials_info = json.loads(os.environ.get("GOOGLE_CREDENTIALS"))
-credentials = ServiceAccountCredentials.from_json_keyfile_dict(credentials_info, scope)
-client = gspread.authorize(credentials)
-
-# Open the Google Sheet
-spreadsheet = client.open('hellowork_Scrapper')  # Use your sheet's name
-worksheet = spreadsheet.sheet1
-
-# Read existing data from Google Sheets into a DataFrame
-existing_data = pd.DataFrame(worksheet.get_all_records())
-
 # Convert scraped results into a DataFrame
 new_data = df_jobs
 
@@ -288,9 +310,6 @@ new_data["Source"] = "hellowork"
 
 print(f"Post geo new data Check length {len(new_data)}")
 print(f"Post geo Check existing length {len(existing_data)}")
-
-# Remove rows that already exist in existing_data to save computational time
-new_data = new_data[~new_data["url"].isin(existing_data["url"])]
 
 # -------- DEBUT CHATGPT DATA ENRICHMENT --------------------------------------------------------------------------------------------
 
@@ -636,28 +655,19 @@ new_data.drop(columns=["combined_text"], inplace=True)
 # -------- FIN EMBEDING OPENAI LARGE ----------------------------------------------------------------------------------------------
 
 
-# Combine and remove duplicates
-if not existing_data.empty:
-    print(len(pd.concat([existing_data, new_data], ignore_index=True).drop_duplicates(subset=['url'])))
-    combined_data = pd.concat([existing_data, new_data], ignore_index=True).drop_duplicates(
-        subset=['url']
-    )
-else:
-    combined_data = new_data
-
 # -------- DEBUT DATA VALIDATION EMPTY VALUES OPENAI ----------------------------------------------------------------------------------------------
 
 # Select columns starting with "IA_"
-ia_cols = [col for col in combined_data.columns if col.startswith("IA_")]
+ia_cols = [col for col in new_data.columns if col.startswith("IA_")]
 
 # Replace "" with "Non spécifié" in those columns only
-combined_data[ia_cols] = combined_data[ia_cols].replace("", "Non spécifié")
+new_data[ia_cols] = new_data[ia_cols].replace("", "Non spécifié")
 
-combined_data["IA_Catégorie_Job_1"] = combined_data["IA_Catégorie_Job_1"].replace("Support & Back-office","Non spécifié")
+new_data["IA_Catégorie_Job_1"] = new_data["IA_Catégorie_Job_1"].replace("Support & Back-office","Non spécifié")
 
 # -------- FIN DATA VALIDATION EMPTY VALUES OPENAI ----------------------------------------------------------------------------------------------
 
-print(f"Post concat Check combined_data length {len(combined_data)}")
+print(f"Post concat Check combined_data length {len(new_data)}")
 
 # Debug: Print the number of rows to append
 rows_to_append = new_data.shape[0]
@@ -665,13 +675,13 @@ print(f"Rows to append: {rows_to_append}")
 
 # Handle NaN, infinity values before sending to Google Sheets
 # Replace NaN values with 0 or another placeholder (you can customize this)
-combined_data = combined_data.fillna(0)
+new_data = new_data.fillna(0)
 
 # Replace infinite values with 0 or another placeholder
-combined_data.replace([float('inf'), float('-inf')], 0, inplace=True)
+new_data.replace([float('inf'), float('-inf')], 0, inplace=True)
 
 # Optional: Ensure all float types are valid (e.g., replace any invalid float with 0)
-combined_data = combined_data.applymap(lambda x: 0 if isinstance(x, float) and (x == float('inf') or x == float('-inf') or x != x) else x)
+new_data = new_data.applymap(lambda x: 0 if isinstance(x, float) and (x == float('inf') or x == float('-inf') or x != x) else x)
 
 # Optional: Ensuring no invalid values (like lists or dicts) in any column
 def clean_value(value):
@@ -679,7 +689,7 @@ def clean_value(value):
         return str(value)  # Convert lists or dicts to string
     return value
 
-combined_data = combined_data.applymap(clean_value)
+new_data = new_data.applymap(clean_value)
 
 #add column titre de annonce sans accents ni special characters
 def remove_accents_and_special(text):
@@ -694,11 +704,14 @@ def remove_accents_and_special(text):
     return cleaned
 
 # Create the new column "Titre annonce sans accent" by applying the function on "intitule".
-combined_data["TitreAnnonceSansAccents"] = combined_data["titre"].apply(
+new_data["TitreAnnonceSansAccents"] = new_data["titre"].apply(
     lambda x: remove_accents_and_special(x) if isinstance(x, str) else x
 )
 
-print(f"Post concat Check combined_data length {len(combined_data)}")
+print(f"Post concat Check combined_data length {len(new_data)}")
+
+
+#---------UPLOAD TO BIGQUERY-------------------------------------------------------------------------------------------------------------
 
 from google.cloud import bigquery
 from google.oauth2 import service_account
@@ -718,7 +731,7 @@ job_config = bigquery.LoadJobConfig(
 )
 
 # Convert DataFrame → list of dict rows (JSON compatible)
-rows = combined_data.to_dict(orient="records")
+rows = new_data.to_dict(orient="records")
 
 # Upload
 job = client.load_table_from_json(
