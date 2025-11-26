@@ -101,7 +101,7 @@ def extraire_offres(limit=10):
     return offres_totales
 
 
-resultats_part1 = extraire_offres(limit=5)
+resultats_part1 = extraire_offres(limit=400)
 resultats_part1 = pd.DataFrame(resultats_part1)
 job_urls = resultats_part1.url.tolist()
 
@@ -700,45 +700,33 @@ combined_data["TitreAnnonceSansAccents"] = combined_data["titre"].apply(
 
 print(f"Post concat Check combined_data length {len(combined_data)}")
 
-# Update Google Sheets with the combined data
-worksheet.clear()  # Clear existing content
-#worksheet.update([combined_data.columns.tolist()] + combined_data.values.tolist())
+from google.cloud import bigquery
+from google.oauth2 import service_account
 
+key_path = json.loads(os.environ.get("BIGQUERY"))
 
-BATCH_SIZE = 500
-MAX_RETRIES = 3
+# Load JSON key
+credentials = service_account.Credentials.from_service_account_file(key_path)
 
-# Prepare data
-header = combined_data.columns.tolist()
-rows = combined_data.values.tolist()
+client = bigquery.Client(credentials=credentials, project="databasealfred")
+table_id = "databasealfred.jobListings.hellowork"
 
-# 1️⃣ Upload the header row
-worksheet.update("A1", [header], value_input_option="USER_ENTERED")
-print("✅ Header uploaded to row 1")
+# CONFIG WITHOUT PYARROW
+job_config = bigquery.LoadJobConfig(
+    write_disposition="WRITE_APPEND",
+    source_format=bigquery.SourceFormat.NEWLINE_DELIMITED_JSON,
+)
 
-# 2️⃣ Upload data in batches starting from row 2
-total_rows = len(rows)
-num_batches = math.ceil(total_rows / BATCH_SIZE)
+# Convert DataFrame → list of dict rows (JSON compatible)
+rows = combined_data.to_dict(orient="records")
 
-for batch_idx, start in enumerate(range(0, total_rows, BATCH_SIZE), start=1):
-    end = min(start + BATCH_SIZE, total_rows)
-    batch = rows[start:end]
+# Upload
+job = client.load_table_from_json(
+    rows,
+    table_id,
+    job_config=job_config
+)
 
-    # Google Sheets rows start at 1; data starts at row 2
-    start_row = start + 2  # +1 for 0-index, +1 for header
-    range_a1 = f"A{start_row}"
+job.result()
 
-    for attempt in range(1, MAX_RETRIES + 1):
-        try:
-            worksheet.update(range_a1, batch, value_input_option="USER_ENTERED")
-            print(f"✅ Uploaded batch {batch_idx}/{num_batches} rows {start_row}–{start_row + len(batch) - 1}")
-            time.sleep(1)
-            break
-        except Exception as e:
-            print(f"❌ Error uploading batch {batch_idx} (rows {start_row}–{start_row + len(batch) - 1}) attempt {attempt}: {e}")
-            if attempt < MAX_RETRIES:
-                sleep_for = 5 * attempt
-                print(f"    ↪ Retrying in {sleep_for}s...")
-                time.sleep(sleep_for)
-            else:
-                print(f"⚠️ Skipping batch {batch_idx} after {MAX_RETRIES} failed attempts.")
+print("✅ Data successfully loaded into BigQuery (JSON mode, no PyArrow needed)")
