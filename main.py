@@ -313,7 +313,6 @@ new_data[["Ville", "Code Postal", "Longitude", "Latitude", "Region"]] = pd.DataF
 new_data["Source"] = "hellowork"
 
 print(f"Post geo new data Check length {len(new_data)}")
-print(f"Post geo Check existing length {len(existing_data)}")
 
 # -------- DEBUT CHATGPT DATA ENRICHMENT --------------------------------------------------------------------------------------------
 
