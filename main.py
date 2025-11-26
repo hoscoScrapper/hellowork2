@@ -113,13 +113,17 @@ import pandas as pd
 from google.oauth2 import service_account
 
 
-key_path = json.loads(os.environ.get("BIGQUERY"))
+# Load JSON from GitHub secret
+key_json = json.loads(os.environ["BIGQUERY"])
 
-# Load JSON key
-credentials = service_account.Credentials.from_service_account_file(key_path)
+# Create credentials from dict
+credentials = service_account.Credentials.from_service_account_info(key_json)
 
 # Initialize BigQuery client
-client = bigquery.Client(credentials=credentials, project="databasealfred")
+client = bigquery.Client(
+    credentials=credentials,
+    project=key_json["project_id"]
+)
 
 # Query existing URLs from your BigQuery table
 query = """
@@ -716,12 +720,18 @@ print(f"Post concat Check combined_data length {len(new_data)}")
 from google.cloud import bigquery
 from google.oauth2 import service_account
 
-key_path = json.loads(os.environ.get("BIGQUERY"))
+# Load JSON from GitHub secret
+key_json = json.loads(os.environ["BIGQUERY"])
 
-# Load JSON key
-credentials = service_account.Credentials.from_service_account_file(key_path)
+# Create credentials from dict
+credentials = service_account.Credentials.from_service_account_info(key_json)
 
-client = bigquery.Client(credentials=credentials, project="databasealfred")
+# Initialize BigQuery client
+client = bigquery.Client(
+    credentials=credentials,
+    project=key_json["project_id"]
+)
+
 table_id = "databasealfred.jobListings.hellowork"
 
 # CONFIG WITHOUT PYARROW
