@@ -77,7 +77,7 @@ def extraire_offres(limit=10):
             wait = WebDriverWait(driver, 10)
 
             # Wait for offers to load
-            offres = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div[data-id-storage-item-id]")))
+            offres = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "li[data-id-storage-item-id]")))
             
             print("Nombre d'offres trouvées:", len(offres))
 
@@ -101,7 +101,7 @@ def extraire_offres(limit=10):
     return offres_totales
 
 
-resultats_part1 = extraire_offres(limit=500)
+resultats_part1 = extraire_offres(limit=5)
 resultats_part1 = pd.DataFrame(resultats_part1)
 job_urls = resultats_part1.url.tolist()
 
