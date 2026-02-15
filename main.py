@@ -201,9 +201,8 @@ for i, job_url in enumerate(job_urls):
     # Optional: clean salary (e.g. remove non-breaking spaces)
     salaire = salaire.replace("\u202f", " ").strip()
 
-    description = driver.find_element(
-        By.XPATH,'//span[text()="Détail du poste"]/ancestor::section//div[@data-truncate-text-target="content"]/p').text.strip()
-
+    description = driver.find_element(By.CSS_SELECTOR,'div[data-truncate-text-target="content"] p').text.strip()
+    
     # Get complementary info (second section)
     complementary_info = driver.find_elements(By.XPATH, '//span[text()="Les avantages"]/ancestor::details//ul/li')
     complementary_info = [a.text.strip() for a in advantages]
