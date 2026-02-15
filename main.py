@@ -101,7 +101,7 @@ def extraire_offres(limit=10):
     return offres_totales
 
 
-resultats_part1 = extraire_offres(limit=500)
+resultats_part1 = extraire_offres(limit=5)
 resultats_part1 = pd.DataFrame(resultats_part1)
 job_urls = resultats_part1.url.tolist()
 
@@ -201,10 +201,13 @@ for i, job_url in enumerate(job_urls):
     # Optional: clean salary (e.g. remove non-breaking spaces)
     salaire = salaire.replace("\u202f", " ").strip()
 
-    description = get_text("section p.tw-typo-long-m")
+    description = driver.find_element(
+        By.XPATH,'//span[text()="Détail du poste"]/ancestor::section//div[@data-truncate-text-target="content"]/p').text.strip()
 
     # Get complementary info (second section)
-    complementary_info = get_text("section:nth-of-type(2) p.tw-typo-long-m")
+    complementary_info = driver.find_elements(By.XPATH, '//span[text()="Les avantages"]/ancestor::details//ul/li')
+    complementary_info = [a.text.strip() for a in advantages]
+
 
     # Append with a line break if complementary info exists
     if complementary_info:
