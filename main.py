@@ -243,6 +243,8 @@ resultats_part2 = pd.DataFrame(job_data)
 #Concat axis 0 resultats_part1 and resultats_part2
 df_jobs = pd.concat([resultats_part1, resultats_part2], axis=1)
 
+print(df_jobs.description)
+
 # Convert scraped results into a DataFrame
 new_data = df_jobs
 
