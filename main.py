@@ -1,7 +1,8 @@
 import time
 import random
 import pandas as pd
-import undetected_chromedriver as uc
+from selenium.webdriver.chrome.options import Options
+#import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
 from datetime import datetime
@@ -38,14 +39,14 @@ url_base = f"https://www.hellowork.com/fr-fr/emploi/recherche.html?k=Restauratio
 
 
 # Configurer Selenium avec undetected_chromedriver
-options = uc.ChromeOptions()
+options = Options()
 options.add_argument('--headless=new')  # Optionnel : exécuter sans ouvrir le navigateur
 options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
 options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.7390.61 Safari/537.36')
 
 # Initialiser le driver avec undetected_chromedriver
-driver = uc.Chrome(options=options)
+driver = webdriver.Chrome(options=options)
 
 def extraire_offres(limit=10):
     offres_totales = []
@@ -147,7 +148,7 @@ print(f"✅ Remaining job URLs to scrape: {len(job_urls)}")
 
 
 # Setup undetected Chrome driver
-options = uc.ChromeOptions()
+options = Options()
 options.add_argument('--headless')
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-gpu")
@@ -156,7 +157,7 @@ options.add_argument('user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) Apple
 
 
 # Launch the driver
-driver = uc.Chrome(options=options)
+driver = webdriver.Chrome(options=options)
 
 # Function to extract text safely
 def get_text(selector, multiple=False):
