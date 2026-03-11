@@ -149,7 +149,8 @@ print(f"✅ Remaining job URLs to scrape: {len(job_urls)}")
 
 # Setup undetected Chrome driver
 options = Options()
-options.add_argument('--headless')
+options.add_argument("--headless=new")
+options.add_argument("--window-size=1920,1080")
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-gpu")
 options.add_argument("--disable-dev-shm-usage")
@@ -173,22 +174,24 @@ job_data = []
 
 for i, job_url in enumerate(job_urls):
     driver.get(job_url)
-    time.sleep(random.uniform(3, 4))  # Random delay for human-like behavior
+
+    WebDriverWait(driver, 10).until(
+    EC.presence_of_all_elements_located((By.CSS_SELECTOR, "ul.tw-flex.tw-flex-wrap.tw-gap-3 li"))
+)
 
     #entreprise = get_text("div.css-1x55bdz a")
     title = get_text("h1#main-content [data-cy='jobTitle']")
     entreprise = get_text("h1#main-content span a")
     #details = get_text('span.tw-inline-flex.tw-typo-m.tw-text-grey-500', multiple=True)
-    #location = details[0] if len(details) > 0 else ""
-    details = get_text("ul[data-cy='tags-resume'] li:first-child", multiple=True)
-    location = details[0] if details else ""
+    details = get_text("ul.tw-flex.tw-flex-wrap.tw-gap-3 > li", multiple=True)
+    location = details[0] if len(details) > 0 else ""
     type_contrat = details[1] if len(details) > 1 else ""
     #type_contrat = details[1] if len(details) > 1 else ""
-    temps_plein = details[2] if len(details) > 2 else ""    
+    temps_plein = details[2] if len(details) > 2 else ""        
 
     
     # Get all <li> texts
-    items = get_text("ul.tw-flex.tw-flex-wrap.tw-gap-3 li", multiple=True)
+    items = get_text("ul.tw-flex.tw-flex-wrap.tw-gap-3 > li", multiple=True)
 
     salaire = ""
     tags = []
