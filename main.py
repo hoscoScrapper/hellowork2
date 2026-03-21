@@ -78,7 +78,7 @@ def extraire_offres(limit=10):
             wait = WebDriverWait(driver, 10)
 
             # Wait for offers to load
-            offres = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "li[data-id-storage-item-id]")))
+            offres = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "div[data-id-storage-item-id]")))
             
             print("Nombre d'offres trouvées:", len(offres))
 
